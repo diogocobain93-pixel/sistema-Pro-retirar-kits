@@ -10,7 +10,21 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import 'express-async-errors';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
+});
+
+// Debug: Check if DATABASE_URL is loaded (log first 15 chars for security)
+if (process.env.DATABASE_URL) {
+  console.log(`Prisma: DATABASE_URL is defined (starts with ${process.env.DATABASE_URL.substring(0, 15)}...)`);
+} else {
+  console.error("Prisma: DATABASE_URL is UNDEFINED in process.env");
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'reirakits-secret-key-2024';
 
 async function startServer() {
