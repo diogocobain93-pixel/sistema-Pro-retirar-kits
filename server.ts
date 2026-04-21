@@ -727,7 +727,7 @@ async function startServer() {
   try {
     // Test connection
     await prisma.$connect();
-    console.log('Database connection: SUCCESS (SQLite)');
+    console.log('Database connection: SUCCESS (MySQL)');
 
     const adminExists = await prisma.user.findFirst({ where: { tipo: 'ADMIN' } });
     if (!adminExists) {
