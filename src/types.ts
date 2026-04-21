@@ -44,6 +44,7 @@ export interface Participant {
   telefone?: string;
   status: ParticipantStatus;
   eventId: string;
+  deliveryRequests?: { id: string }[];
   entregueAt?: string;
   createdAt: string;
 }

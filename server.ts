@@ -536,6 +536,11 @@ async function startServer() {
           { cpf: { contains: String(search) } }
         ] : undefined
       },
+      include: {
+        deliveryRequests: {
+          select: { id: true }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
 

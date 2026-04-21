@@ -9,7 +9,8 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
-  Filter
+  Filter,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +96,79 @@ export default function RelatoriosPage() {
       setIsActionLoading(false);
     }
   };
+  
+  const handleExportCSV = () => {
+    const participantsToExport = filteredParticipants;
+    if (participantsToExport.length === 0) return;
+
+    const headers = [
+      'Nome',
+      'CPF',
+      'Data Nascimento',
+      'Sexo',
+      'Equipe',
+      'Cidade',
+      'Modalidade',
+      'Número Peito',
+      'Chip',
+      'Kit',
+      'Tamanho Camiseta',
+      'Status',
+      'Hora Entrega',
+      'Solicitou Retirada'
+    ];
+
+    const escapeCSV = (val: any) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = participantsToExport.map(p => [
+      escapeCSV(p.nome),
+      escapeCSV(p.cpf),
+      escapeCSV(p.dataNascimento),
+      escapeCSV(p.sexo),
+      escapeCSV(p.equipe),
+      escapeCSV(p.cidade),
+      escapeCSV(p.modalidade),
+      escapeCSV(p.numeroPeito),
+      escapeCSV(p.chip),
+      escapeCSV(p.kit),
+      escapeCSV(p.tamanhoCamiseta),
+      escapeCSV(p.status === 'ENTREGUE' ? 'ENTREGUE' : 'PENDENTE'),
+      escapeCSV(p.status === 'ENTREGUE' && p.entregueAt ? new Date(p.entregueAt).toLocaleString('pt-BR') : ''),
+      escapeCSV(p.deliveryRequests && p.deliveryRequests.length > 0 ? 'SIM' : 'NÃO')
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    // Suggest filename: relatorio-evento-nome-do-evento.csv
+    let eventName = 'geral';
+    if (selectedEventId !== 'all') {
+      const selectedEvent = events.find(e => e.id === selectedEventId);
+      if (selectedEvent) {
+        eventName = selectedEvent.nome.toLowerCase().replace(/\s+/g, '-');
+      }
+    }
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `relatorio-evento-${eventName}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const filteredParticipants = participants.filter(p => {
     const matchesSearch = p.nome.toLowerCase().includes(search.toLowerCase()) || 
@@ -112,6 +186,14 @@ export default function RelatoriosPage() {
            </h1>
            <p className="text-muted-foreground mt-1">Visão completa e controle manual de todos os participantes.</p>
         </div>
+        <Button 
+          onClick={handleExportCSV} 
+          disabled={loading || filteredParticipants.length === 0}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl px-6 flex items-center gap-2 shadow-lg shadow-emerald-200 transition-all active:scale-95"
+        >
+          <Download size={20} />
+          <span>EXPORTAR CSV</span>
+        </Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
