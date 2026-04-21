@@ -170,12 +170,14 @@ export default function OrganizadorEventos() {
           setIsCreating(open);
           if (!open) setFormData({ nome: '', descricao: '', dataEvento: '', local: '', imageUrl: '' });
         }}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-white gap-2 px-6 font-bold h-11 rounded-xl shadow-lg shadow-primary/10 transition-all active:scale-[0.98]">
-              <Plus size={18} />
-              Criar Novo Evento
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button className="bg-primary hover:bg-primary/90 text-white gap-2 px-6 font-bold h-11 rounded-xl shadow-lg shadow-primary/10 transition-all active:scale-[0.98]">
+                <Plus size={18} />
+                Criar Novo Evento
+              </Button>
+            }
+          />
           <DialogContent className="sm:max-w-[500px] rounded-2xl p-8 border-0 shadow-2xl">
             <form onSubmit={handleCreate}>
               <DialogHeader className="mb-6">

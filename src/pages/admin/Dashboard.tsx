@@ -176,12 +176,14 @@ export default function AdminDashboard() {
             </div>
 
             <Dialog open={isCreating} onOpenChange={setIsCreating}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 text-white gap-2 h-10 px-5 font-semibold rounded-lg shadow-sm">
-                  <UserPlus size={18} />
-                  Criar Organizador
-                </Button>
-              </DialogTrigger>
+              <DialogTrigger
+                render={
+                  <Button className="bg-primary hover:bg-primary/90 text-white gap-2 h-10 px-5 font-semibold rounded-lg shadow-sm">
+                    <UserPlus size={18} />
+                    Criar Organizador
+                  </Button>
+                }
+              />
               <DialogContent className="sm:max-w-[480px] rounded-2xl border-0 shadow-2xl p-8">
                 <form onSubmit={handleCreate}>
                   <DialogHeader className="mb-6">
