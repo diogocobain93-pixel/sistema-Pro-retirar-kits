@@ -649,18 +649,23 @@ async function startServer() {
       return res.status(400).json({ error: 'CSV vazio ou sem dados' });
     }
 
-    const results = {
-      imported: 0,
-      ignored: 0,
-      errors: 0
-    };
+    // 1. Fetch all existing CPFs for this event to avoid duplicates in memory
+    const existingParticipants = await prisma.participant.findMany({
+      where: { eventId: id },
+      select: { cpf: true }
+    });
+    const existingCpfs = new Set(existingParticipants.map(p => p.cpf));
 
+    const toInsert: any[] = [];
+    const ignoredList: { row: number; nome: string; reason: string }[] = [];
+    const cpfsInCsv = new Set<string>();
+
+    // 2. Validate in memory
     for (let i = 1; i < lines.length; i++) {
       const columns = lines[i].split(',').map((c: string) => c.trim());
-      // New Format (15 columns): 
-      // Nome,CPF,Data Nascimento,Sexo,Equipe,Cidade,Modalidade,Número Peito,Chip,Kit,Tamanho Camiseta,Status,Em Entrega,Hora Entrega,Solicitou Retirada
+      
       if (columns.length < 2) { 
-        results.errors++;
+        ignoredList.push({ row: i + 1, nome: 'Linha inválida', reason: 'Colunas insuficientes' });
         continue;
       }
 
@@ -671,51 +676,63 @@ async function startServer() {
       ] = columns;
 
       if (!nome || !cpf) {
-        results.errors++;
+        ignoredList.push({ row: i + 1, nome: nome || 'Sem nome', reason: 'Nome ou CPF ausente' });
         continue;
       }
 
-      try {
-        const existing = await prisma.participant.findUnique({
-          where: { cpf_eventId: { cpf, eventId: id } }
-        });
-
-        if (!existing) {
-          // Status logic: Check if the 'Status' column (index 11) is already 'Entregue' 
-          // or if the 'Em Entrega' column (not currently captured but available if needed)
-          let status = "INSCRITO";
-          const s = statusInCsv?.toLowerCase();
-          if (s === 'entregue' || s === 'entregue' || s === 'sim') {
-            status = "ENTREGUE";
-          }
-
-          await prisma.participant.create({
-            data: { 
-              nome, 
-              cpf, 
-              dataNascimento: dataNascimento || null,
-              sexo: sexo || null,
-              equipe: equipe || null,
-              cidade: cidade || null,
-              modalidade: modalidade || null,
-              numeroPeito: numeroPeito || null,
-              chip: chip || null,
-              kit: kit || null,
-              tamanhoCamiseta: tamanhoCamiseta || null,
-              status,
-              eventId: id 
-            }
-          });
-          results.imported++;
-        } else {
-          results.ignored++;
-        }
-      } catch (err) {
-        results.errors++;
+      // Check internal CSV duplicates
+      if (cpfsInCsv.has(cpf)) {
+        ignoredList.push({ row: i + 1, nome, reason: 'CPF duplicado no arquivo' });
+        continue;
       }
+      cpfsInCsv.add(cpf);
+
+      // Check database duplicates
+      if (existingCpfs.has(cpf)) {
+        ignoredList.push({ row: i + 1, nome, reason: 'Participante já cadastrado neste evento' });
+        continue;
+      }
+
+      let status: "INSCRITO" | "ENTREGUE" = "INSCRITO";
+      const s = statusInCsv?.toLowerCase();
+      if (s === 'entregue' || s === 'sim' || s === '1') {
+        status = "ENTREGUE";
+      }
+
+      toInsert.push({
+        nome,
+        cpf,
+        dataNascimento: dataNascimento || null,
+        sexo: sexo || null,
+        equipe: equipe || null,
+        cidade: cidade || null,
+        modalidade: modalidade || null,
+        numeroPeito: numeroPeito || null,
+        chip: chip || null,
+        kit: kit || null,
+        tamanhoCamiseta: tamanhoCamiseta || null,
+        status,
+        eventId: id
+      });
     }
 
-    res.json(results);
+    // 3. Batch insertion
+    let importedCount = 0;
+    if (toInsert.length > 0) {
+      const result = await prisma.participant.createMany({
+        data: toInsert,
+        skipDuplicates: true
+      });
+      importedCount = result.count;
+    }
+
+    res.json({
+      totalProcessed: lines.length - 1,
+      imported: importedCount,
+      ignored: ignoredList.length,
+      errors: 0, // Errors are grouped in ignored for simplicity
+      ignoredList
+    });
   });
 
   // GET Event Details

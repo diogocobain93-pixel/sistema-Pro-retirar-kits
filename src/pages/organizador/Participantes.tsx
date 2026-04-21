@@ -57,9 +57,10 @@ export default function OrganizadorParticipantes() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [csvPreview, setCsvPreview] = useState<string | null>(null);
   const [importResults, setImportResults] = useState<{
+    totalProcessed: number;
     imported: number;
     ignored: number;
-    errors: number;
+    ignoredList?: { row: number; nome: string; reason: string }[];
   } | null>(null);
 
   useEffect(() => {
@@ -570,28 +571,44 @@ export default function OrganizadorParticipantes() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+                      <div className="text-2xl font-bold text-slate-700">{importResults.totalProcessed}</div>
+                      <div className="text-[10px] text-slate-500 font-bold uppercase">Total</div>
+                    </div>
                     <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center">
                       <div className="text-2xl font-bold text-emerald-600">{importResults.imported}</div>
-                      <div className="text-xs text-emerald-600 font-medium">Importados</div>
+                      <div className="text-[10px] text-emerald-600 font-bold uppercase">Sucesso</div>
                     </div>
                     <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 text-center">
                       <div className="text-2xl font-bold text-amber-600">{importResults.ignored}</div>
-                      <div className="text-xs text-amber-600 font-medium">Ignorados</div>
-                    </div>
-                    <div className="bg-red-50 p-3 rounded-xl border border-red-100 text-center">
-                      <div className="text-2xl font-bold text-red-600">{importResults.errors}</div>
-                      <div className="text-xs text-red-600 font-medium">Erros/Inválidos</div>
+                      <div className="text-[10px] text-amber-600 font-bold uppercase">Ignorados</div>
                     </div>
                   </div>
 
+                  {importResults.ignoredList && importResults.ignoredList.length > 0 && (
+                    <div className="space-y-2">
+                       <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Itens não importados:</h4>
+                       <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50 divide-y divide-slate-100">
+                          {importResults.ignoredList.map((item, idx) => (
+                            <div key={idx} className="p-3 text-[11px] flex justify-between items-start gap-2">
+                               <div>
+                                 <span className="font-bold text-slate-700">Linha {item.row}:</span> {item.nome}
+                               </div>
+                               <span className="text-amber-600 font-medium text-right">{item.reason}</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+
                   <Button 
-                    className="w-full bg-slate-900" 
+                    className="w-full bg-slate-900 hover:bg-slate-800 h-12 rounded-xl font-bold" 
                     onClick={() => {
                       setShowImportModal(false);
                       setImportResults(null);
                     }}
                   >
-                    Fechar e Ver Lista
+                    Concluir e Voltar
                   </Button>
                 </div>
               )}
