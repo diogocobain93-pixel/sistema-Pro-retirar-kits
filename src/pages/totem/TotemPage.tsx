@@ -81,15 +81,16 @@ export default function TotemPage() {
     }
   };
 
-  const performSearch = async () => {
-    if (!search || search.length < 2) return;
+  const performSearch = async (customSearch?: string) => {
+    const term = customSearch !== undefined ? customSearch : search;
+    if (!term || term.length < 2) return;
     setIsSearching(true);
     setError('');
     try {
-      const results = await api.buscarParticipantesTotem(slug!, search);
+      const results = await api.buscarParticipantesTotem(slug!, term);
       if (results.length > 0) {
         // Find by exact CPF match if possible, or take the first result
-        const exactMatch = results.find(p => p.cpf.replace(/\D/g, '') === search.replace(/\D/g, ''));
+        const exactMatch = results.find(p => p.cpf.replace(/\D/g, '') === term.replace(/\D/g, ''));
         const p = exactMatch || results[0];
         
         if (p.status === 'ENTREGUE') {
@@ -224,10 +225,24 @@ export default function TotemPage() {
               <div className="relative w-full max-w-3xl">
                 <Input 
                   ref={inputRef}
-                  placeholder="000.000.000-00"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="DIGITE SEU CPF"
                   className="w-full h-24 md:h-40 px-6 md:px-10 bg-slate-50 border-2 md:border-4 border-slate-100 rounded-2xl md:rounded-[2.5rem] text-3xl sm:text-4xl md:text-6xl font-black uppercase placeholder:text-slate-200 focus-visible:ring-indigo-600 focus-visible:border-indigo-600 transition-all text-center text-slate-800 shadow-inner"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const cleaned = val.replace(/\D/g, '');
+                    
+                    if (cleaned.length <= 11) {
+                      setSearch(val);
+                      if (cleaned.length === 11) {
+                        inputRef.current?.blur();
+                        performSearch(cleaned);
+                      }
+                    }
+                  }}
                   onKeyDown={(e) => e.key === 'Enter' && performSearch()}
                 />
               </div>

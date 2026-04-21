@@ -87,6 +87,12 @@ async function startServer() {
       .replace(/^-+|-+$/g, ""); // Trim dashes
   };
 
+  // Helper for Normalizing CPF
+  const cleanCPF = (cpf: string) => {
+    const cleaned = cpf ? String(cpf).replace(/\D/g, '') : '';
+    return cleaned.length > 0 ? cleaned : undefined;
+  };
+
   // --- API Routes ---
 
   app.get('/api/entregas/recentes', authenticate, async (req, res) => {
@@ -202,14 +208,20 @@ async function startServer() {
     const event = await prisma.event.findUnique({ where: { slug } });
     if (!event) return res.status(404).json({ error: 'Evento não encontrado' });
 
+    const cpfFilter = cleanCPF(String(search));
+    const where: any = {
+      eventId: event.id,
+      OR: [
+        { nome: { contains: String(search) } }
+      ]
+    };
+
+    if (cpfFilter) {
+      where.OR.push({ cpf: { contains: cpfFilter } });
+    }
+
     const participants = await prisma.participant.findMany({
-      where: {
-        eventId: event.id,
-        OR: [
-          { nome: { contains: String(search) } },
-          { cpf: { contains: String(search) } }
-        ]
-      },
+      where,
       take: 10,
       orderBy: { nome: 'asc' }
     });
@@ -400,10 +412,13 @@ async function startServer() {
       }
 
       if (search) {
+        const cpfFilter = cleanCPF(String(search));
         where.OR = [
-          { nome: { contains: String(search) } },
-          { cpf: { contains: String(search) } }
+          { nome: { contains: String(search) } }
         ];
+        if (cpfFilter) {
+          where.OR.push({ cpf: { contains: cpfFilter } });
+        }
       }
 
       const [total, participants] = await Promise.all([
@@ -587,14 +602,19 @@ async function startServer() {
     const access: any = await checkEventAccess(id, req.user);
     if (access.error) return res.status(access.status).json({ error: access.error });
 
+    const where: any = { eventId: id };
+    if (search) {
+      const cpfFilter = cleanCPF(String(search));
+      where.OR = [
+        { nome: { contains: String(search) } }
+      ];
+      if (cpfFilter) {
+        where.OR.push({ cpf: { contains: cpfFilter } });
+      }
+    }
+
     const participants = await prisma.participant.findMany({
-      where: {
-        eventId: id,
-        OR: search ? [
-          { nome: { contains: String(search) } },
-          { cpf: { contains: String(search) } }
-        ] : undefined
-      },
+      where,
       include: {
         deliveryRequests: {
           select: { id: true }
@@ -608,12 +628,13 @@ async function startServer() {
 
   app.post('/api/eventos/:id/participantes', authenticate, async (req: any, res) => {
     const { id } = req.params;
-    const { nome, email, cpf, telefone } = req.body;
+    const { nome, email, cpf: rawCpf, telefone } = req.body;
 
-    if (!nome || !cpf) {
+    if (!nome || !rawCpf) {
       return res.status(400).json({ error: 'Nome e CPF são obrigatórios' });
     }
 
+    const cpf = cleanCPF(rawCpf);
     const access: any = await checkEventAccess(id, req.user);
     if (access.error) return res.status(access.status).json({ error: access.error });
 
@@ -729,15 +750,17 @@ async function startServer() {
       }
 
       const [
-        nome, cpf, dataNascimento, sexo, equipe, cidade, 
+        nome, rawCpf, dataNascimento, sexo, equipe, cidade, 
         modalidade, numeroPeito, chip, kit, 
         tamanhoCamiseta, statusInCsv
       ] = columns;
 
-      if (!nome || !cpf) {
+      if (!nome || !rawCpf) {
         ignoredList.push({ row: i + 1, nome: nome || 'Sem nome', reason: 'Nome ou CPF ausente' });
         continue;
       }
+
+      const cpf = cleanCPF(rawCpf);
 
       // Check internal CSV duplicates
       if (cpfsInCsv.has(cpf)) {
@@ -818,46 +841,83 @@ async function startServer() {
     });
   }
 
-  // Seed & Migrations
-  try {
-    // Test connection
-    await prisma.$connect();
-    console.log('Database connection: SUCCESS (MySQL)');
-
-    const adminExists = await prisma.user.findFirst({ where: { tipo: 'ADMIN' } });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await prisma.user.create({
-        data: {
-          nome: 'Administrador Sistema',
-          email: 'admin@reirakits.com',
-          senha: hashedPassword,
-          tipo: 'ADMIN',
-          status: 'ATIVO'
-        }
-      });
-      console.log('Seed: Admin user created (admin@reirakits.com / admin123)');
-    }
-
-    // Migration: Populate slugs for existing events
-    const eventsWithoutSlug = await prisma.event.findMany({ where: { slug: null } });
-    if (eventsWithoutSlug.length > 0) {
-      console.log(`Migration: Populating slugs for ${eventsWithoutSlug.length} events...`);
-      for (const event of eventsWithoutSlug) {
-        const slug = generateSlug(`${event.nome}-${event.id.split('-')[0]}`);
-        await prisma.event.update({
-          where: { id: event.id },
-          data: { slug }
-        });
-      }
-      console.log('Migration: Slugs populated successfully.');
-    }
-  } catch (err) {
-    console.error('Database connection: FAILED', err);
-  }
-
-  app.listen(PORT, '0.0.0.0', () => {
+  app.listen(PORT, '0.0.0.0', async () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    
+    // Run Migrations & Seed in the background
+    try {
+      await prisma.$connect();
+      console.log('Database connection: SUCCESS (MySQL)');
+
+      // Admin Seed
+      const adminExists = await prisma.user.findFirst({ where: { tipo: 'ADMIN' } });
+      if (!adminExists) {
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        await prisma.user.create({
+          data: {
+            nome: 'Administrador Sistema',
+            email: 'admin@reirakits.com',
+            senha: hashedPassword,
+            tipo: 'ADMIN',
+            status: 'ATIVO'
+          }
+        });
+        console.log('Seed: Admin user created (admin@reirakits.com / admin123)');
+      }
+
+      // Migration: Normalize existing CPFs (One query is faster)
+      try {
+        const normalizedCount = await prisma.$executeRaw`
+          UPDATE Participant 
+          SET cpf = REPLACE(REPLACE(cpf, '.', ''), '-', '') 
+          WHERE cpf LIKE '%.%' OR cpf LIKE '%-%'
+        `;
+        if (normalizedCount > 0) {
+          console.log(`Migration: Normalized ${normalizedCount} CPFs via SQL.`);
+        }
+      } catch (sqlErr) {
+        // Fallback to loop if SQL fails for any reason
+        const participantsWithFormattedCpf = await prisma.participant.findMany({
+          where: {
+            OR: [
+              { cpf: { contains: '.' } },
+              { cpf: { contains: '-' } }
+            ]
+          },
+          select: { id: true, cpf: true }
+        });
+
+        if (participantsWithFormattedCpf.length > 0) {
+          console.log(`Migration: Normalizing ${participantsWithFormattedCpf.length} CPFs via Loop (Fallback)...`);
+          for (const p of participantsWithFormattedCpf) {
+            const cleaned = p.cpf.replace(/\D/g, '');
+            if (cleaned) {
+              await prisma.participant.update({
+                where: { id: p.id },
+                data: { cpf: cleaned }
+              });
+            }
+          }
+          console.log('Migration: CPFs normalized successfully.');
+        }
+      }
+
+      // Migration: Populate slugs for existing events
+      const eventsWithoutSlug = await prisma.event.findMany({ where: { slug: null } });
+      if (eventsWithoutSlug.length > 0) {
+        console.log(`Migration: Populating slugs for ${eventsWithoutSlug.length} events...`);
+        for (const event of eventsWithoutSlug) {
+          const slug = generateSlug(`${event.nome}-${event.id.split('-')[0]}`);
+          await prisma.event.update({
+            where: { id: event.id },
+            data: { slug }
+          });
+        }
+        console.log('Migration: Slugs populated successfully.');
+      }
+    } catch (migErr) {
+      console.error('Migration background process error:', migErr);
+    }
   });
 }
 
