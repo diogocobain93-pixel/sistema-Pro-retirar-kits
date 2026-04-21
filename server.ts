@@ -375,6 +375,65 @@ async function startServer() {
     }
   });
 
+  // --- Paginated Participants for Reports ---
+  app.get('/api/organizador/participantes', authenticate, async (req: any, res) => {
+    try {
+      const { user } = req;
+      const { page = 1, limit = 25, search = '', eventId = 'all' } = req.query;
+      
+      const skip = (Number(page) - 1) * Number(limit);
+      const take = Number(limit);
+
+      // Get events accessible by the user
+      const userEvents = await prisma.event.findMany({
+        where: user.tipo === 'ADMIN' ? {} : { organizadorId: user.id },
+        select: { id: true }
+      });
+      const accessibleEventIds = userEvents.map(e => e.id);
+
+      const where: any = {
+        eventId: eventId === 'all' ? { in: accessibleEventIds } : eventId,
+      };
+
+      if (eventId !== 'all' && !accessibleEventIds.includes(eventId as string)) {
+        return res.status(403).json({ error: 'Acesso negado a este evento' });
+      }
+
+      if (search) {
+        where.OR = [
+          { nome: { contains: String(search) } },
+          { cpf: { contains: String(search) } }
+        ];
+      }
+
+      const [total, participants] = await Promise.all([
+        prisma.participant.count({ where }),
+        prisma.participant.findMany({
+          where,
+          include: {
+            event: { select: { nome: true } },
+            deliveryRequests: { select: { id: true } }
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take
+        })
+      ]);
+
+      res.json({
+        participants: participants.map(p => ({
+          ...p,
+          eventName: p.event.nome
+        })),
+        total,
+        pages: Math.ceil(total / take)
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Erro ao buscar participantes paginados' });
+    }
+  });
+
   // --- Events API ---
   
   app.get('/api/eventos', authenticate, async (req: any, res) => {

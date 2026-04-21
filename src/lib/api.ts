@@ -181,6 +181,14 @@ export const api = {
     });
   },
 
+  async getParticipantesPaginado(params: { page: number, limit: number, search?: string, eventId?: string }): Promise<{ participants: (Participant & { eventName: string, deliveryRequests: { id: string }[] })[], total: number, pages: number }> {
+    const { page, limit, search, eventId } = params;
+    let url = `/organizador/participantes?page=${page}&limit=${limit}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (eventId) url += `&eventId=${eventId}`;
+    return this.request(url);
+  },
+
   async getDashboardStats(): Promise<any> {
     return this.request('/organizador/dashboard');
   },
