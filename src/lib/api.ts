@@ -41,22 +41,21 @@ export const api = {
       headers,
     });
 
+    const text = await response.text();
+
     if (!response.ok) {
-      let errorData;
       try {
-        errorData = await response.json();
+        const errorData = JSON.parse(text);
+        throw new Error(errorData.error || 'Erro na requisição');
       } catch (e) {
-        const text = await response.text();
         console.error('API Error (Not JSON):', text.substring(0, 200));
         throw new Error(`Erro no servidor (${response.status}): Resposta inválida`);
       }
-      throw new Error(errorData.error || 'Erro na requisição');
     }
 
     try {
-      return await response.json();
+      return JSON.parse(text);
     } catch (e) {
-      const text = await response.text();
       console.error('API Response JSON Parse Error:', text.substring(0, 200));
       throw new Error('Erro ao processar dados do servidor: Resposta malformatada');
     }
