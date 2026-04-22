@@ -48,10 +48,12 @@ export default function AdminDashboard() {
   const [organizadores, setOrganizadores] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<User | null>(null);
   const [search, setSearch] = useState('');
 
   // Form states
   const [formData, setFormData] = useState({ nome: '', email: '', senha: '' });
+  const [editFormData, setEditFormData] = useState({ nome: '', email: '', status: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchOrganizadores = async () => {
@@ -82,6 +84,31 @@ export default function AdminDashboard() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrg) return;
+    
+    setIsSubmitting(true);
+    try {
+      await api.atualizarOrganizador(editingOrg.id, editFormData);
+      setEditingOrg(null);
+      fetchOrganizadores();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const startEdit = (org: User) => {
+    setEditingOrg(org);
+    setEditFormData({
+      nome: org.nome,
+      email: org.email,
+      status: org.status
+    });
   };
 
   const toggleStatus = async (user: User) => {
@@ -284,7 +311,12 @@ export default function AdminDashboard() {
                     {new Date(org.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right space-x-3">
-                    <button className="text-primary hover:underline font-medium text-sm">Editar</button>
+                    <button 
+                      onClick={() => startEdit(org)}
+                      className="text-primary hover:underline font-medium text-sm"
+                    >
+                      Editar
+                    </button>
                     {org.status === 'ATIVO' ? (
                        <button onClick={() => toggleStatus(org)} className="text-slate-400 hover:text-red-500 font-medium text-sm transition-colors">Desativar</button>
                     ) : (
@@ -297,6 +329,62 @@ export default function AdminDashboard() {
           </Table>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingOrg} onOpenChange={(open) => !open && setEditingOrg(null)}>
+        <DialogContent className="sm:max-w-[480px] rounded-2xl border-0 shadow-2xl p-8">
+          <form onSubmit={handleUpdate}>
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-2xl font-bold text-foreground">Editar Organizador</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Atualize as informações de acesso do parceiro abaixo.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-5 py-2">
+              <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Nome da Organização</label>
+                  <Input 
+                  placeholder="Ex: Eventos Pro" 
+                  required 
+                  className="h-11 bg-secondary/50 border-border focus:bg-white rounded-lg"
+                  value={editFormData.nome}
+                  onChange={(e) => setEditFormData({...editFormData, nome: e.target.value})}
+                  />
+              </div>
+              <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Email do Administrador</label>
+                  <Input 
+                  type="email" 
+                  placeholder="email@parceiro.com" 
+                  required 
+                  className="h-11 bg-secondary/50 border-border focus:bg-white rounded-lg"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                  />
+              </div>
+              <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Status da Conta</label>
+                  <select 
+                    className="flex h-11 w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({...editFormData, status: e.target.value})}
+                  >
+                    <option value="ATIVO">Ativo</option>
+                    <option value="INATIVO">Inativo</option>
+                  </select>
+              </div>
+            </div>
+            <DialogFooter className="mt-8 flex gap-3 sm:justify-start">
+              <Button type="submit" className="flex-1 bg-primary text-white py-6 rounded-xl font-bold order-2" disabled={isSubmitting}>
+                {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+              <Button variant="outline" type="button" onClick={() => setEditingOrg(null)} className="flex-1 border border-border text-muted-foreground py-6 rounded-xl font-bold order-1">
+                Cancelar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
