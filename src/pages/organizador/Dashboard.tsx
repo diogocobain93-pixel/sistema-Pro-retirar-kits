@@ -19,13 +19,17 @@ export default function OrganizadorDashboard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
+  const [error, setError] = useState<string | null>(null);
+
   const fetchStats = async () => {
     try {
+      setError(null);
       const stats = await api.getDashboardStats();
       setData(stats);
       setLastUpdate(new Date());
-    } catch (error) {
+    } catch (error: any) {
       console.error('Falha ao carregar estatísticas:', error);
+      setError(error.message || 'Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -66,6 +70,12 @@ export default function OrganizadorDashboard() {
            </p>
         </div>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border-2 border-red-100 text-red-600 rounded-3xl font-bold uppercase tracking-widest text-xs animate-in slide-in-from-top-2">
+          ⚠️ {error}
+        </div>
+      )}
 
       {/* Main Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -860,6 +860,11 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
+      // If it's an API request that fell through, return JSON instead of HTML
+      if (req.path.startsWith('/api/')) {
+        console.warn(`API Route not found: ${req.method} ${req.path}`);
+        return res.status(404).json({ error: `Rota da API não encontrada: ${req.path}` });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

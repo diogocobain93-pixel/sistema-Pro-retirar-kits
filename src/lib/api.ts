@@ -42,11 +42,24 @@ export const api = {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        const text = await response.text();
+        console.error('API Error (Not JSON):', text.substring(0, 200));
+        throw new Error(`Erro no servidor (${response.status}): Resposta inválida`);
+      }
       throw new Error(errorData.error || 'Erro na requisição');
     }
 
-    return response.json();
+    try {
+      return await response.json();
+    } catch (e) {
+      const text = await response.text();
+      console.error('API Response JSON Parse Error:', text.substring(0, 200));
+      throw new Error('Erro ao processar dados do servidor: Resposta malformatada');
+    }
   },
 
   // Auth
