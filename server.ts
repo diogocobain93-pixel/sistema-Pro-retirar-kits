@@ -18,9 +18,17 @@ const prisma = new PrismaClient({
   }
 });
 
-// Debug: Check if DATABASE_URL is loaded (log first 15 chars for security)
+// Debug: Check if DATABASE_URL is loaded
 if (process.env.DATABASE_URL) {
-  console.log(`Prisma: DATABASE_URL is defined (starts with ${process.env.DATABASE_URL.substring(0, 15)}...)`);
+  try {
+    const parts = process.env.DATABASE_URL.split('@');
+    if (parts.length > 1) {
+      const hostPart = parts[1].split('/')[0];
+      console.log(`Prisma Config: Attempting to connect to ${hostPart}`);
+    }
+  } catch (e) {
+    console.log("Prisma: DATABASE_URL is defined but could not be parsed for logging.");
+  }
 } else {
   console.error("Prisma: DATABASE_URL is UNDEFINED in process.env");
 }
@@ -54,17 +62,32 @@ async function startServer() {
 
   // Auth Middleware
   const authenticate = async (req: any, res: any, next: any) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Não autorizado' });
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Não autorizado: Token ausente ou malformatado' });
+    }
+
+    const token = authHeader.split(' ')[1];
 
     try {
       const decoded: any = jwt.verify(token, JWT_SECRET);
-      const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-      if (!user) return res.status(401).json({ error: 'Usuário não encontrado' });
-      req.user = user;
-      next();
-    } catch (err) {
-      return res.status(401).json({ error: 'Token inválido' });
+      
+      // Attempt to find user with a timeout or catch DB errors specifically
+      try {
+        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+        if (!user) return res.status(401).json({ error: 'Usuário não encontrado' });
+        req.user = user;
+        next();
+      } catch (dbErr: any) {
+        console.error('Auth Database Error:', dbErr.message);
+        if (dbErr.code === 'P1001' || dbErr.message.includes('Can\'t reach database')) {
+          return res.status(503).json({ error: 'Serviço temporariamente indisponível: Falha na conexão com o banco de dados' });
+        }
+        return res.status(500).json({ error: 'Erro interno ao processar autenticação' });
+      }
+    } catch (err: any) {
+      console.error('JWT Verification Error:', err.message);
+      return res.status(401).json({ error: 'Token inválido ou expirado' });
     }
   };
 
