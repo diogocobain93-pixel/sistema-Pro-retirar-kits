@@ -53,7 +53,7 @@ export default function AdminDashboard() {
 
   // Form states
   const [formData, setFormData] = useState({ nome: '', email: '', senha: '' });
-  const [editFormData, setEditFormData] = useState({ nome: '', email: '', status: '' });
+  const [editFormData, setEditFormData] = useState({ nome: '', email: '', status: '', senha: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchOrganizadores = async () => {
@@ -92,7 +92,11 @@ export default function AdminDashboard() {
     
     setIsSubmitting(true);
     try {
-      await api.atualizarOrganizador(editingOrg.id, editFormData);
+      // Only include password if it was typed
+      const payload: any = { ...editFormData };
+      if (!payload.senha) delete payload.senha;
+      
+      await api.atualizarOrganizador(editingOrg.id, payload);
       setEditingOrg(null);
       fetchOrganizadores();
     } catch (err: any) {
@@ -107,7 +111,8 @@ export default function AdminDashboard() {
     setEditFormData({
       nome: org.nome,
       email: org.email,
-      status: org.status
+      status: org.status,
+      senha: ''
     });
   };
 
@@ -372,6 +377,16 @@ export default function AdminDashboard() {
                     <option value="ATIVO">Ativo</option>
                     <option value="INATIVO">Inativo</option>
                   </select>
+              </div>
+              <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Nova Senha (Deixe em branco para não alterar)</label>
+                  <Input 
+                  type="password" 
+                  placeholder="Mantenha em branco para manter a atual" 
+                  className="h-11 bg-secondary/50 border-border focus:bg-white rounded-lg"
+                  value={editFormData.senha}
+                  onChange={(e) => setEditFormData({...editFormData, senha: e.target.value})}
+                  />
               </div>
             </div>
             <DialogFooter className="mt-8 flex gap-3 sm:justify-start">

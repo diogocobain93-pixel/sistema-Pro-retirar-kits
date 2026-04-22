@@ -339,11 +339,16 @@ async function startServer() {
 
   app.patch('/api/admin/organizadores/:id', authenticate, isAdmin, async (req, res) => {
     const { id } = req.params;
-    const { nome, email, status } = req.body;
+    const { nome, email, status, senha } = req.body;
+
+    const data: any = { nome, email, status };
+    if (senha) {
+      data.senha = await bcrypt.hash(senha, 10);
+    }
 
     const user = await prisma.user.update({
       where: { id },
-      data: { nome, email, status }
+      data
     });
 
     res.json(user);
