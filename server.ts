@@ -943,8 +943,12 @@ async function startServer() {
         }
         console.log('Migration: Slugs populated successfully.');
       }
-    } catch (migErr) {
-      console.error('Migration background process error:', migErr);
+    } catch (migErr: any) {
+      if (migErr.code === 'P1001' || migErr.message?.includes('Can\'t reach database')) {
+        console.warn('Migration Skip: Database is unreachable (P1001). Check node connection to MySQL.');
+      } else {
+        console.error('Migration background process error:', migErr);
+      }
     }
   });
 }

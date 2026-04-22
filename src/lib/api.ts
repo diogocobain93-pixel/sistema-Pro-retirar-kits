@@ -44,13 +44,14 @@ export const api = {
     const text = await response.text();
 
     if (!response.ok) {
+      let errorMessage = `Erro no servidor (${response.status})`;
       try {
         const errorData = JSON.parse(text);
-        throw new Error(errorData.error || 'Erro na requisição');
+        errorMessage = errorData.error || errorMessage;
       } catch (e) {
         console.error('API Error (Not JSON):', text.substring(0, 200));
-        throw new Error(`Erro no servidor (${response.status}): Resposta inválida`);
       }
+      throw new Error(errorMessage);
     }
 
     try {
