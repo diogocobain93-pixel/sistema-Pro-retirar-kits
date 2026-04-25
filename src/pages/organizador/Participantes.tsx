@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Participant, Event } from '@/types';
+import Papa from 'papaparse';
 import { 
   Users, 
   Search, 
@@ -17,7 +18,8 @@ import {
   FileSpreadsheet,
   Trash2,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +34,7 @@ export default function OrganizadorParticipantes() {
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showMappingModal, setShowMappingModal] = useState(false);
   const [participantToDelete, setParticipantToDelete] = useState<Participant | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,7 +58,26 @@ export default function OrganizadorParticipantes() {
   
   // Import CSV State
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [csvPreview, setCsvPreview] = useState<string | null>(null);
+  const [csvColumns, setCsvColumns] = useState<string[]>([]);
+  const [csvData, setCsvData] = useState<any[]>([]);
+  const [mapping, setMapping] = useState<Record<string, string>>({});
+  
+  const systemFields = [
+    { id: 'nome', label: 'Nome Completo', required: true, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'cpf', label: 'CPF', required: true, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'numero', label: 'Número de Atleta', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'chip', label: 'Código do Chip', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'sexo', label: 'Sexo', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'equipe', label: 'Equipe/Time', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'cidade', label: 'Cidade', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'data_nascimento', label: 'Data de Nascimento', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'modalidade', label: 'Modalidade', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'kit', label: 'Tipo de Kit', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'tamanho_camiseta', label: 'Tamanho Camiseta', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'numero_peito', label: 'Número de Peito', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+    { id: 'entregue', label: 'Já Entregue?', required: false, icon: <ArrowRight size={14} className="text-slate-400" /> },
+  ];
+
   const [importResults, setImportResults] = useState<{
     totalProcessed: number;
     imported: number;
@@ -123,29 +145,90 @@ export default function OrganizadorParticipantes() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+    if (!file.name.endsWith('.csv')) {
       setError('Por favor, selecione um arquivo CSV válido.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setCsvPreview(event.target?.result as string);
-    };
-    reader.readAsText(file);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        if (results.meta.fields) {
+          const columns = results.meta.fields;
+          setCsvColumns(columns);
+          setCsvData(results.data);
+          
+          // Auto-mapping
+          const newMapping: Record<string, string> = {};
+          
+          columns.forEach(col => {
+            const lowerCol = col.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            if (lowerCol.includes('nome')) newMapping['nome'] = col;
+            else if (lowerCol.includes('cpf')) newMapping['cpf'] = col;
+            else if (lowerCol.includes('peito') || lowerCol === 'numero') newMapping['numero_peito'] = col;
+            else if (lowerCol === 'n' || lowerCol === 'no' || lowerCol === 'id' || lowerCol.includes('atleta')) newMapping['numero'] = col;
+            else if (lowerCol.includes('chip')) newMapping['chip'] = col;
+            else if (lowerCol.includes('sexo')) newMapping['sexo'] = col;
+            else if (lowerCol.includes('equipe') || lowerCol.includes('time')) newMapping['equipe'] = col;
+            else if (lowerCol.includes('cidade')) newMapping['cidade'] = col;
+            else if (lowerCol.includes('nascimento')) newMapping['data_nascimento'] = col;
+            else if (lowerCol.includes('modalidade')) newMapping['modalidade'] = col;
+            else if (lowerCol.includes('kit')) newMapping['kit'] = col;
+            else if (lowerCol.includes('camiseta') || lowerCol.includes('tamanho')) newMapping['tamanho_camiseta'] = col;
+            else if (lowerCol.includes('entregue')) newMapping['entregue'] = col;
+          });
+          
+          setMapping(newMapping);
+          setShowMappingModal(true);
+        } else {
+          setError('Cabeçalho não encontrado no CSV.');
+        }
+      },
+      error: (err) => {
+        setError('Erro ao ler arquivo: ' + err.message);
+      }
+    });
   };
 
-  const handleImport = async () => {
-    if (!id || !csvPreview) return;
+  const handleConfirmMapping = async () => {
+    if (!id || csvData.length === 0) return;
+    
+    // Validate required fields
+    if (!mapping['nome'] || !mapping['cpf']) {
+      setError('Os campos Nome e CPF são obrigatórios para o mapeamento.');
+      return;
+    }
+
+    setShowMappingModal(false);
     setIsRefreshing(true);
     setError('');
+
     try {
-      const res = await api.importarParticipantes(id, csvPreview);
+      // Re-format data to the CSV format the backend expects
+      // format: numero,chip,nome,sexo,equipe,cidade,data_nascimento,cpf,modalidade,kit,tamanho_camiseta,numero_peito,entregue
+      const order = ['numero', 'chip', 'nome', 'sexo', 'equipe', 'cidade', 'data_nascimento', 'cpf', 'modalidade', 'kit', 'tamanho_camiseta', 'numero_peito', 'entregue'];
+      
+      const header = order.join(',');
+      const rows = csvData.map(row => {
+        return order.map(field => {
+          const csvCol = mapping[field];
+          return csvCol ? (row[csvCol] || '').toString().replace(/,/g, ';') : '';
+        }).join(',');
+      });
+      
+      const csvString = [header, ...rows].join('\n');
+      
+      const res = await api.importarParticipantes(id, csvString);
       setImportResults(res);
       const updatedList = await api.getParticipantes(id);
       setParticipants(updatedList);
-      setCsvPreview(null);
+      
       if (fileInputRef.current) fileInputRef.current.value = '';
+      setCsvData([]);
+      setCsvColumns([]);
+      setMapping({});
     } catch (err: any) {
       setError(err.message || 'Erro na importação');
     } finally {
@@ -252,37 +335,37 @@ export default function OrganizadorParticipantes() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nome</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">CPF</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Modalidade</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Kit</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cidade</th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
+                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nome</th>
+                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">CPF</th>
+                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Modalidade</th>
+                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Kit</th>
+                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Cidade</th>
+                <th className="px-4 md:px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 md:px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {participants.length > 0 ? (
                 participants.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/50 transition-colors text-sm">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900">{p.nome}</div>
+                  <tr key={p.id} className="hover:bg-slate-50/50 transition-colors text-xs md:text-sm">
+                    <td className="px-4 md:px-6 py-4">
+                      <div className="font-bold text-slate-900 truncate max-w-[120px] md:max-w-none">{p.nome}</div>
                       {p.numero && <div className="text-[10px] text-indigo-600 font-black uppercase">Nº {p.numero}</div>}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 font-mono text-xs">
+                    <td className="px-4 md:px-6 py-4 text-slate-600 font-mono text-xs hidden sm:table-cell">
                       {p.cpf}
                     </td>
-                    <td className="px-6 py-4 text-slate-600">
+                    <td className="px-4 md:px-6 py-4 text-slate-600 hidden md:table-cell">
                       {p.modalidade || '-'}
                     </td>
-                    <td className="px-6 py-4 text-slate-600">
+                    <td className="px-4 md:px-6 py-4 text-slate-600 hidden lg:table-cell">
                       {p.kit || '-'}
                     </td>
-                    <td className="px-6 py-4 text-slate-600">
+                    <td className="px-4 md:px-6 py-4 text-slate-600 hidden lg:table-cell">
                       {p.cidade || '-'}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    <td className="px-4 md:px-6 py-4">
+                      <span className={`inline-flex items-center px-2 md:px-2.5 py-0.5 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-wider ${
                         p.status === 'ENTREGUE' 
                           ? 'bg-emerald-100 text-emerald-800' 
                           : 'bg-indigo-100 text-indigo-800'
@@ -290,8 +373,8 @@ export default function OrganizadorParticipantes() {
                         {p.status === 'ENTREGUE' ? 'Entregue' : 'Pendente'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 text-right">
+                    <td className="px-4 md:px-6 py-4 text-right">
+                      <div className="flex justify-end gap-1 md:gap-2">
                         <Button 
                           size="sm" 
                           variant="ghost" 
@@ -493,7 +576,6 @@ export default function OrganizadorParticipantes() {
                 onClick={() => {
                   setShowImportModal(false);
                   setImportResults(null);
-                  setCsvPreview(null);
                 }}
                 className="p-1 hover:bg-slate-200 rounded-lg transition-colors"
               >
@@ -507,16 +589,10 @@ export default function OrganizadorParticipantes() {
                   <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl space-y-2">
                     <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
                       <FileSpreadsheet className="w-4 h-4" />
-                      Novo Formato de Importação
+                      Importação Inteligente
                     </h3>
                     <p className="text-xs text-indigo-700 leading-relaxed font-medium">
-                      O arquivo CSV deve possuir as seguintes colunas (exatamente nesta ordem):
-                    </p>
-                    <code className="block bg-white/70 p-2 rounded text-[10px] font-mono whitespace-nowrap overflow-x-auto text-indigo-800">
-                      Nome,CPF,Data Nascimento,Sexo,Equipe,Cidade,Modalidade,Número Peito,Chip,Kit,Tamanho Camiseta,Status,Em Entrega,Hora Entrega,Solicitou Retirada
-                    </code>
-                    <p className="text-[10px] text-indigo-500 mt-1 italic">
-                      * O campo 'entregue' aceita: sim, s, 1 ou entregue.
+                      O sistema aceita qualquer arquivo CSV. Após o upload, você poderá mapear as colunas do seu arquivo para os campos do sistema.
                     </p>
                   </div>
 
@@ -529,8 +605,8 @@ export default function OrganizadorParticipantes() {
                       >
                         <div className="flex flex-col items-center justify-center pt-5 pb-6 text-slate-500">
                           <Upload className="w-8 h-8 mb-2 opacity-50" />
-                          <p className="mb-2 text-sm">Clique para fazer upload ou arraste</p>
-                          <p className="text-xs opacity-50 font-mono">SOMENTE ARQUIVOS .CSV</p>
+                          <p className="mb-2 text-sm text-center">Clique para fazer upload ou arraste</p>
+                          <p className="text-[10px] opacity-50 font-mono">SOMENTE ARQUIVOS .CSV</p>
                         </div>
                         <input 
                           id="csv-file" 
@@ -542,23 +618,10 @@ export default function OrganizadorParticipantes() {
                         />
                       </label>
                     </div>
-                    {csvPreview && (
-                      <div className="flex items-center justify-between bg-slate-50 p-2 px-3 rounded-lg border border-slate-200">
-                        <span className="text-sm text-slate-600 truncate font-mono">CSV carregado e pronto</span>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      </div>
-                    )}
                   </div>
 
                   <div className="flex gap-3 pt-4 justify-end">
                     <Button variant="outline" onClick={() => setShowImportModal(false)}>Cancelar</Button>
-                    <Button 
-                      onClick={handleImport}
-                      disabled={!csvPreview || isRefreshing}
-                      className="bg-indigo-600 hover:bg-indigo-700 min-w-[120px]"
-                    >
-                      {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Processar CSV'}
-                    </Button>
                   </div>
                 </>
               ) : (
@@ -617,6 +680,80 @@ export default function OrganizadorParticipantes() {
         </div>
       )}
 
+      {/* Mapping Modal */}
+      {showMappingModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+                Mapeamento de Colunas
+              </h2>
+              <button 
+                onClick={() => setShowMappingModal(false)}
+                className="p-1 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                  Relacione as colunas do seu arquivo CSV com os campos correspondentes no nosso sistema. 
+                  Os campos <span className="font-bold">Nome</span> e <span className="font-bold">CPF</span> são obrigatórios.
+                </p>
+              </div>
+
+              <div className="max-h-[400px] overflow-y-auto pr-2 space-y-1">
+                 <div className="grid grid-cols-2 gap-4 px-4 py-2 border-b border-slate-100 mb-2">
+                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CAMPO DO SISTEMA</div>
+                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">COLUNA NO SEU CSV</div>
+                 </div>
+
+                 {systemFields.map((field) => (
+                   <div key={field.id} className="grid grid-cols-2 gap-4 items-center p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                           {field.icon}
+                         </div>
+                         <div>
+                            <p className="text-sm font-bold text-slate-700">
+                              {field.label}
+                              {field.required && <span className="text-red-500 ml-1">*</span>}
+                            </p>
+                         </div>
+                      </div>
+                      <div>
+                        <select 
+                          className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-xs font-bold focus:ring-2 focus:ring-indigo-600 outline-none transition-all"
+                          value={mapping[field.id] || ''}
+                          onChange={(e) => setMapping(prev => ({ ...prev, [field.id]: e.target.value }))}
+                        >
+                          <option value="">-- Não importar --</option>
+                          {csvColumns.map(col => (
+                            <option key={col} value={col}>{col}</option>
+                          ))}
+                        </select>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+
+              <div className="flex gap-3 pt-6 mt-6 border-t border-slate-100 justify-end">
+                <Button variant="outline" onClick={() => setShowMappingModal(false)}>Cancelar</Button>
+                <Button 
+                  onClick={handleConfirmMapping}
+                  className="bg-indigo-600 hover:bg-indigo-700 min-w-[160px] font-bold"
+                >
+                  Confirmar Importação
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {participantToDelete && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
@@ -639,9 +776,6 @@ export default function OrganizadorParticipantes() {
                   placeholder="Digite o nome do participante para confirmar"
                   className="bg-white border-slate-200"
                   onChange={(e) => {
-                    // Logic for name confirmation if desired, but user just said "typed to proceed" for EVENT deletion.
-                    // For participants, they said "display a modal asking for confirmation, requiring the participant's name to be typed to proceed".
-                    // I will check this in the button click.
                     (window as any)._participantConfirmName = e.target.value;
                   }}
                 />

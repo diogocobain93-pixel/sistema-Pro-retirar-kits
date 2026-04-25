@@ -133,7 +133,7 @@ async function startServer() {
           }
         },
         orderBy: {
-          createdAt: 'desc'
+          createdAt: 'asc'
         },
         take: 50
       });
@@ -384,7 +384,7 @@ async function startServer() {
           participant: { select: { nome: true } },
           event: { select: { nome: true } }
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'asc' }
       });
 
       const recentDeliveries = await prisma.participant.findMany({
@@ -778,9 +778,9 @@ async function startServer() {
       }
 
       const [
-        nome, rawCpf, dataNascimento, sexo, equipe, cidade, 
-        modalidade, numeroPeito, chip, kit, 
-        tamanhoCamiseta, statusInCsv
+        numero, chip, nome, sexo, equipe, cidade, 
+        dataNascimento, rawCpf, modalidade, kit, 
+        tamanhoCamiseta, numeroPeito, statusInCsv
       ] = columns;
 
       if (!nome || !rawCpf) {
@@ -805,22 +805,23 @@ async function startServer() {
 
       let status: "INSCRITO" | "ENTREGUE" = "INSCRITO";
       const s = statusInCsv?.toLowerCase();
-      if (s === 'entregue' || s === 'sim' || s === '1') {
+      if (s === 'entregue' || s === 'sim' || s === 's' || s === '1') {
         status = "ENTREGUE";
       }
 
       toInsert.push({
+        numero: numero || null,
+        chip: chip || null,
         nome,
-        cpf,
-        dataNascimento: dataNascimento || null,
         sexo: sexo || null,
         equipe: equipe || null,
         cidade: cidade || null,
+        dataNascimento: dataNascimento || null,
+        cpf,
         modalidade: modalidade || null,
-        numeroPeito: numeroPeito || null,
-        chip: chip || null,
         kit: kit || null,
         tamanhoCamiseta: tamanhoCamiseta || null,
+        numeroPeito: numeroPeito || null,
         status,
         eventId: id
       });

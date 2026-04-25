@@ -527,16 +527,16 @@ export default function OrganizadorEventos() {
                     </Badge>
                   </TableCell>
                   <TableCell className="px-6 py-5 text-right">
-                    <div className="flex justify-end gap-2 text-right">
+                    <div className="flex flex-wrap justify-end gap-2">
                       {event.slug && (
                         <Link to={`/totem/${event.slug}`} target="_blank">
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="border-amber-100 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg font-bold gap-2"
+                            className="border-amber-100 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg font-bold gap-2 text-[10px] md:text-xs h-8 md:h-9"
                           >
                             <Monitor size={14} />
-                            Totem
+                            <span className="hidden sm:inline">Totem</span>
                           </Button>
                         </Link>
                       )}
@@ -544,32 +544,32 @@ export default function OrganizadorEventos() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="border-indigo-100 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg font-bold gap-2"
+                          className="border-indigo-100 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg font-bold gap-2 text-[10px] md:text-xs h-8 md:h-9"
                         >
                           <Users size={14} />
-                          Participantes
+                          <span className="hidden sm:inline">Participantes</span>
                         </Button>
                       </Link>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="border-border text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg font-bold gap-2"
+                        className="border-border text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-lg font-bold gap-2 text-[10px] md:text-xs h-8 md:h-9"
                         onClick={() => startEditing(event)}
                       >
                         <Edit size={14} />
-                        Editar
+                        <span className="hidden sm:inline">Editar</span>
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="border-red-100 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg font-bold gap-2"
+                        className="border-red-100 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg font-bold gap-2 text-[10px] md:text-xs h-8 md:h-9"
                         onClick={() => {
                           setEventToDelete(event);
                           setDeleteConfirmationName('');
                         }}
                       >
                         <Trash2 size={14} />
-                        Excluir
+                        <span className="hidden sm:inline">Excluir</span>
                       </Button>
                     </div>
                   </TableCell>

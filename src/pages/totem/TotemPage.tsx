@@ -8,7 +8,16 @@ import {
   AlertCircle,
   User,
   X,
-  ArrowRight
+  ArrowRight,
+  Fingerprint,
+  Calendar,
+  Target,
+  Users,
+  Package,
+  MapPin,
+  ChevronRight,
+  Layers,
+  Hash
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -274,117 +283,147 @@ export default function TotemPage() {
 
       {/* TELA 3 — DADOS DO ATLETA */}
       {step === 'details' && selectedParticipant && (
-        <div className="min-h-screen bg-slate-50 flex flex-col sm:items-center sm:justify-center p-4 md:p-8 animate-in slide-in-from-right duration-500 overflow-y-auto">
-          <div className="max-w-6xl w-full bg-white rounded-2xl md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col my-auto">
+        <div className="min-h-screen bg-slate-100 flex flex-col sm:items-center sm:justify-center p-4 md:p-8 animate-in slide-in-from-right duration-500 overflow-y-auto">
+          <div className="max-w-4xl w-full bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col my-auto border-4 border-white">
             
-            {/* Header / Title Area */}
-            <div className="p-6 md:p-12 bg-indigo-600 text-white flex justify-between items-center">
-              <div>
-                <p className="text-indigo-200 font-black uppercase tracking-[0.2em] text-sm md:text-xl mb-1 md:mb-2">Seus Dados</p>
-                <h2 className="text-2xl md:text-6xl font-black uppercase tracking-tighter leading-tight truncate max-w-[200px] sm:max-w-md md:max-w-none">{event?.nome}</h2>
-              </div>
-              <button onClick={() => setStep('search')} className="p-2 md:p-4 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
-                <X className="w-8 h-8 md:w-12 md:h-12" />
-              </button>
+            <div className="text-center py-8 md:py-12">
+               <h2 className="text-primary text-3xl md:text-5xl font-black uppercase tracking-tighter">SEUS DADOS</h2>
+               <p className="text-slate-400 font-bold uppercase tracking-widest mt-1 md:mt-2 px-6">{event?.nome}</p>
             </div>
 
-            <div className="p-6 md:p-12 flex-1">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+            <div className="px-6 md:px-12 pb-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                
                 {/* Data Card Blocks */}
-                <div className="space-y-4 md:space-y-6">
-                  <div className="p-5 md:p-8 bg-slate-50 rounded-2xl md:rounded-3xl border-2 border-slate-100">
-                    <p className="text-[10px] md:text-sm font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-2">Nome Completo</p>
-                    <p className="text-xl md:text-4xl font-black text-slate-900 uppercase leading-tight">{selectedParticipant.nome}</p>
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <User size={20} className="md:w-24 md:h-24" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    <div className="p-5 md:p-8 bg-slate-50 rounded-2xl md:rounded-3xl border-2 border-slate-100">
-                      <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-2">CPF</p>
-                      <p className="text-lg md:text-2xl font-black text-slate-700">{selectedParticipant.cpf}</p>
-                    </div>
-                    <div className="p-5 md:p-8 bg-slate-50 rounded-2xl md:rounded-3xl border-2 border-slate-100">
-                      <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-2">Nascimento</p>
-                      <p className="text-lg md:text-2xl font-black text-slate-700">{selectedParticipant.dataNascimento || '---'}</p>
-                    </div>
-                  </div>
-                  <div className="p-5 md:p-8 bg-slate-50 rounded-2xl md:rounded-3xl border-2 border-slate-100">
-                    <p className="text-[10px] md:text-sm font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-2">Equipe</p>
-                    <p className="text-lg md:text-2xl font-black text-slate-700 uppercase truncate">{selectedParticipant.equipe || '---'}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">NOME COMPLETO</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.nome}</p>
                   </div>
                 </div>
 
-                <div className="space-y-4 md:space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    <div className="p-5 md:p-8 bg-indigo-50 border-2 border-indigo-100 rounded-2xl md:rounded-3xl">
-                      <p className="text-[10px] md:text-xs font-black text-indigo-400 uppercase tracking-widest mb-1 md:mb-2">Modalidade</p>
-                      <p className="text-lg md:text-2xl font-black text-indigo-900 uppercase">{selectedParticipant.modalidade}</p>
-                    </div>
-                    <div className="p-5 md:p-8 bg-slate-50 rounded-2xl md:rounded-3xl border-2 border-slate-100">
-                      <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-2">Sexo</p>
-                      <p className="text-lg md:text-2xl font-black text-slate-700 uppercase">{selectedParticipant.sexo || '---'}</p>
-                    </div>
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <Hash size={20} />
                   </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    <div className="p-5 md:p-8 bg-indigo-50 border-2 border-indigo-100 rounded-2xl md:rounded-3xl">
-                      <p className="text-[10px] md:text-xs font-black text-indigo-400 uppercase tracking-widest mb-1 md:mb-2">Kit</p>
-                      <p className="text-lg md:text-2xl font-black text-indigo-900 uppercase">{selectedParticipant.kit || '---'}</p>
-                    </div>
-                    <div className="p-5 md:p-8 bg-indigo-50 border-2 border-indigo-100 rounded-2xl md:rounded-3xl">
-                      <p className="text-[10px] md:text-xs font-black text-indigo-400 uppercase tracking-widest mb-1 md:mb-2">Camiseta</p>
-                      <p className="text-lg md:text-2xl font-black text-indigo-900 uppercase">{selectedParticipant.tamanhoCamiseta || '---'}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                    <div className="p-5 md:p-8 bg-slate-50 rounded-2xl md:rounded-3xl border-2 border-slate-100">
-                      <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-1 md:mb-2">Cidade</p>
-                      <p className="text-lg md:text-2xl font-black text-slate-700 uppercase truncate">{selectedParticipant.cidade || '---'}</p>
-                    </div>
-                    <div className="p-5 md:p-8 bg-slate-900 rounded-2xl md:rounded-3xl shadow-xl">
-                      <p className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-1 md:mb-2">Número</p>
-                      <p className="text-3xl md:text-4xl font-black text-white">{selectedParticipant.numero || '---'}</p>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">CPF</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.cpf}</p>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <Calendar size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">DATA DE NASCIMENTO</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.dataNascimento || '---'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <Layers size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">MODALIDADE</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.modalidade}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <Users size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">EQUIPE</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.equipe || '---'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <User size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">SEXO</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.sexo || '---'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <Package size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">KIT DO ATLETA</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.kit || '---'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <Package size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">TAMANHO CAMISETA</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.tamanhoCamiseta || '---'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 md:p-5 bg-slate-50/50 rounded-2xl border border-slate-100 md:col-span-2 group transition-all hover:bg-white hover:shadow-md">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                    <MapPin size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">CIDADE DE RESIDÊNCIA</p>
+                    <p className="text-base md:text-lg font-black text-slate-900 uppercase truncate leading-tight">{selectedParticipant.cidade || '---'}</p>
+                  </div>
+                </div>
+
               </div>
 
               {/* Action Area */}
-              <div className="mt-8 md:mt-12 pt-8 md:pt-12 border-t-2 md:border-t-4 border-slate-50 flex flex-col items-center gap-6 md:gap-8">
+              <div className="mt-8 md:mt-12 flex flex-col md:flex-row items-center gap-4 w-full">
                 {success ? (
-                  <div className="w-full p-8 md:p-12 bg-emerald-50 border-2 md:border-4 border-emerald-200 rounded-3xl md:rounded-[3rem] text-emerald-800 text-center flex flex-col items-center gap-4 md:gap-6 animate-in zoom-in-95">
-                    <CheckCircle2 className="w-12 h-12 md:w-20 md:h-20 animate-bounce" />
-                    <h3 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">Solicitação Enviada!</h3>
-                    <p className="text-lg md:text-2xl font-bold uppercase">Aguarde no balcão de entregas.</p>
+                  <div className="w-full p-8 bg-emerald-50 border-2 border-emerald-200 rounded-3xl text-emerald-800 text-center flex flex-col items-center gap-4 animate-in zoom-in-95">
+                    <CheckCircle2 className="w-12 h-12 animate-bounce" />
+                    <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight">Solicitação Enviada!</h3>
+                    <p className="text-sm font-bold uppercase">Aguarde no balcão de entregas.</p>
                   </div>
                 ) : error ? (
-                   <div className="w-full p-6 md:p-8 bg-red-50 border-2 md:border-4 border-red-200 rounded-2xl md:rounded-[2rem] text-red-800 flex items-center justify-center gap-4 md:gap-6">
-                      <AlertCircle className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0" />
-                      <p className="text-xl md:text-2xl font-black uppercase tracking-tight">{error}</p>
+                   <div className="w-full p-6 bg-red-50 border-2 border-red-200 rounded-2xl text-red-800 flex items-center justify-center gap-4">
+                      <AlertCircle className="w-8 h-8 flex-shrink-0" />
+                      <p className="text-lg font-black uppercase tracking-tight">{error}</p>
                    </div>
                 ) : (
-                  <button 
-                    onClick={() => handleDeliver(selectedParticipant.id)}
-                    disabled={deliveringId !== null}
-                    className="group relative w-full h-24 md:h-40 bg-indigo-600 hover:bg-slate-900 text-white rounded-2xl md:rounded-[3rem] shadow-xl md:shadow-2xl flex items-center justify-center gap-4 md:gap-6 overflow-hidden transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {deliveringId ? (
-                      <Loader2 className="w-12 h-12 md:w-20 md:h-20 animate-spin" />
-                    ) : (
-                      <>
-                        <span className="text-xl sm:text-3xl md:text-6xl font-black uppercase tracking-tighter">SOLICITAR RETIRADA</span>
-                        <div className="w-12 h-12 md:w-20 md:h-20 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-indigo-400 transition-colors">
-                          <ArrowRight className="w-6 h-6 md:w-12 md:h-12 group-hover:translate-x-2 transition-transform" />
-                        </div>
-                      </>
-                    )}
-                  </button>
-                )}
-                
-                {!success && !deliveringId && (
-                  <button onClick={resetTotem} className="text-slate-400 hover:text-indigo-600 px-6 py-3 md:px-12 md:py-4 font-black uppercase tracking-widest text-sm md:text-xl transition-colors">
-                    Voltar / Cancelar
-                  </button>
+                  <>
+                    <Button 
+                      variant="secondary"
+                      onClick={resetTotem}
+                      className="w-full md:w-1/3 h-16 md:h-20 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-base md:text-lg"
+                    >
+                      CANCELAR
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeliver(selectedParticipant.id)}
+                      disabled={deliveringId !== null}
+                      className="w-full md:w-2/3 h-16 md:h-20 bg-primary hover:bg-primary/90 text-white rounded-2xl md:rounded-3xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-base md:text-lg group"
+                    >
+                      {deliveringId ? (
+                        <Loader2 className="w-10 h-10 animate-spin" />
+                      ) : (
+                        <>
+                          SOLICITAR RETIRADA
+                          <ArrowRight className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-2 transition-transform" />
+                        </>
+                      )}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

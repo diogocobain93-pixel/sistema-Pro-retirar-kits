@@ -205,28 +205,28 @@ export default function RelatoriosPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-           <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-            Relatórios <FileText size={32} className="text-primary" />
+           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            Relatórios <FileText size={24} className="text-primary md:w-8 md:h-8" />
            </h1>
-           <p className="text-muted-foreground mt-1">Visão completa e controle manual de todos os participantes.</p>
+           <p className="text-sm md:text-base text-muted-foreground mt-1">Visão completa e controle manual de todos os participantes.</p>
         </div>
         <Button 
           onClick={handleExportCSV} 
           disabled={loading || participants.length === 0}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl px-6 flex items-center gap-2 shadow-lg shadow-emerald-200 transition-all active:scale-95"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 md:h-12 rounded-xl px-4 md:px-6 flex items-center gap-2 shadow-lg shadow-emerald-200 transition-all active:scale-95 text-xs md:text-base w-full md:w-auto"
         >
-          <Download size={20} />
+          <Download size={18} className="md:w-5 md:h-5" />
           <span>EXPORTAR CSV</span>
         </Button>
       </div>
 
       <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-border flex flex-col lg:flex-row gap-4 items-center">
+        <div className="p-4 md:p-6 border-b border-border flex flex-col lg:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
               placeholder="Buscar por nome ou CPF..." 
-              className="pl-10 w-full bg-secondary/50 border-border focus:bg-white h-11 rounded-xl shadow-none"
+              className="pl-10 w-full bg-secondary/50 border-border focus:bg-white h-10 md:h-11 rounded-xl shadow-none"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -235,7 +235,7 @@ export default function RelatoriosPage() {
           <div className="flex items-center gap-3 w-full lg:w-auto">
             <Filter size={18} className="text-muted-foreground hidden lg:block" />
             <select 
-              className="h-11 bg-secondary/50 border border-border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all w-full lg:w-64"
+              className="h-10 md:h-11 bg-secondary/50 border border-border rounded-xl px-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all w-full lg:w-64"
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
             >
@@ -251,65 +251,65 @@ export default function RelatoriosPage() {
           <Table>
             <TableHeader className="bg-secondary/50 border-b border-border">
               <TableRow>
-                <TableHead className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-muted-foreground">Nome</TableHead>
-                <TableHead className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-muted-foreground">CPF</TableHead>
-                <TableHead className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-muted-foreground">Modalidade</TableHead>
-                <TableHead className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-muted-foreground">Kit</TableHead>
-                <TableHead className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-muted-foreground">Cidade</TableHead>
-                <TableHead className="px-6 py-4 font-bold uppercase text-xs tracking-wider text-muted-foreground">Status</TableHead>
-                <TableHead className="px-6 py-4 text-right font-bold uppercase text-xs tracking-wider text-muted-foreground">Ações</TableHead>
+                <TableHead className="px-4 md:px-6 py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider text-muted-foreground">Nome</TableHead>
+                <TableHead className="px-4 md:px-6 py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider text-muted-foreground hidden sm:table-cell">CPF</TableHead>
+                <TableHead className="px-4 md:px-6 py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider text-muted-foreground hidden md:table-cell">Modalidade</TableHead>
+                <TableHead className="px-4 md:px-6 py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider text-muted-foreground hidden lg:table-cell">Kit</TableHead>
+                <TableHead className="px-4 md:px-6 py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider text-muted-foreground hidden lg:table-cell">Cidade</TableHead>
+                <TableHead className="px-4 md:px-6 py-4 font-bold uppercase text-[10px] md:text-xs tracking-wider text-muted-foreground">Status</TableHead>
+                <TableHead className="px-4 md:px-6 py-4 text-right font-bold uppercase text-[10px] md:text-xs tracking-wider text-muted-foreground">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-border">
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-20 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-12 md:py-20 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                       <p className="font-medium animate-pulse">Cruzando dados dos participantes...</p>
+                       <p className="font-medium animate-pulse text-xs md:text-sm">Cruzando dados dos participantes...</p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : participants.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-20 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-12 md:py-20 text-muted-foreground text-xs md:text-sm">
                     Nenhum participante encontrado.
                   </TableCell>
                 </TableRow>
               ) : participants.map((p) => (
                 <TableRow key={p.id} className="hover:bg-secondary/20 transition-all group">
-                  <TableCell className="px-6 py-4">
-                    <div className="font-bold text-foreground">{p.nome}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase font-black">{p.eventName}</div>
+                  <TableCell className="px-4 md:px-6 py-4">
+                    <div className="font-bold text-foreground text-xs md:text-sm truncate max-w-[120px] md:max-w-none">{p.nome}</div>
+                    <div className="text-[8px] md:text-[10px] text-muted-foreground uppercase font-black truncate max-w-[120px] md:max-w-none">{p.eventName}</div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 font-mono text-xs">{p.cpf}</TableCell>
-                  <TableCell className="px-6 py-4 text-sm">{p.modalidade || '-'}</TableCell>
-                  <TableCell className="px-6 py-4 text-sm">{p.kit || '-'}</TableCell>
-                  <TableCell className="px-6 py-4 text-sm">{p.cidade || '-'}</TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell className="px-4 md:px-6 py-4 font-mono text-[10px] md:text-xs hidden sm:table-cell">{p.cpf}</TableCell>
+                  <TableCell className="px-4 md:px-6 py-4 text-xs md:text-sm hidden md:table-cell">{p.modalidade || '-'}</TableCell>
+                  <TableCell className="px-4 md:px-6 py-4 text-xs md:text-sm hidden lg:table-cell">{p.kit || '-'}</TableCell>
+                  <TableCell className="px-4 md:px-6 py-4 text-xs md:text-sm hidden lg:table-cell">{p.cidade || '-'}</TableCell>
+                  <TableCell className="px-4 md:px-6 py-4">
                     <Badge 
                       variant={p.status === 'ENTREGUE' ? 'default' : 'secondary'}
-                      className={p.status === 'ENTREGUE' ? 'bg-emerald-100 text-emerald-700 border-0' : 'bg-amber-100 text-amber-700 border-0'}
+                      className={p.status === 'ENTREGUE' ? 'bg-emerald-100 text-emerald-700 border-0 text-[8px] md:text-[10px]' : 'bg-amber-100 text-amber-700 border-0 text-[8px] md:text-[10px]'}
                     >
                       {p.status === 'ENTREGUE' ? 'Entregue' : 'Pendente'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
+                  <TableCell className="px-4 md:px-6 py-4 text-right">
+                    <div className="flex justify-end gap-1 md:gap-2">
                       <Button 
                         size="sm" 
                         variant="outline"
-                        className={p.status === 'ENTREGUE' ? 'border-amber-100 text-amber-600 hover:bg-amber-50' : 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'}
+                        className={`h-8 rounded-lg ${p.status === 'ENTREGUE' ? 'border-amber-100 text-amber-600 hover:bg-amber-50' : 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'} px-2 md:px-3 text-[10px] md:text-xs`}
                         onClick={() => handleToggleStatus(p)}
                         title={p.status === 'ENTREGUE' ? 'Marcar como Pendente' : 'Marcar como Entregue'}
                       >
                         {p.status === 'ENTREGUE' ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
-                        <span className="ml-2 hidden sm:inline">{p.status === 'ENTREGUE' ? 'Pendente' : 'Entregue'}</span>
+                        <span className="ml-1.5 hidden sm:inline">{p.status === 'ENTREGUE' ? 'Pendente' : 'Entregue'}</span>
                       </Button>
                       <Button 
                         size="sm" 
                         variant="outline"
-                        className="border-red-100 text-red-600 hover:bg-red-50"
+                        className="border-red-100 text-red-600 hover:bg-red-50 h-8 w-8 p-0"
                         onClick={() => setParticipantToDelete(p)}
                       >
                         <Trash2 size={14} />
@@ -323,25 +323,25 @@ export default function RelatoriosPage() {
         </div>
 
         {/* CONTROLES DE PAGINAÇÃO */}
-        <div className="p-6 border-t border-border bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="p-4 md:p-6 border-t border-border bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-[10px] md:text-sm text-muted-foreground order-2 md:order-1">
             Mostrando <span className="font-bold text-foreground">{(page - 1) * limit + 1}</span> a <span className="font-bold text-foreground">{Math.min(page * limit, totalItems)}</span> de <span className="font-bold text-foreground">{totalItems}</span> participantes
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 order-1 md:order-2 w-full md:w-auto justify-center">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1 || loading}
-              className="h-10 rounded-xl px-4 flex items-center gap-2 font-bold transition-all active:scale-95"
+              className="h-9 md:h-10 rounded-xl px-3 md:px-4 flex items-center gap-2 font-bold transition-all active:scale-95 text-xs"
             >
-              <ChevronLeft size={18} />
-              Anterior
+              <ChevronLeft size={16} />
+              <span className="hidden sm:inline">Anterior</span>
             </Button>
             
-            <div className="h-10 px-4 bg-white border border-border rounded-xl flex items-center justify-center font-bold text-sm min-w-[100px] shadow-sm">
-              Página {page} de {totalPages || 1}
+            <div className="h-9 md:h-10 px-3 md:px-4 bg-white border border-border rounded-xl flex items-center justify-center font-bold text-[10px] md:text-sm min-w-[80px] md:min-w-[100px] shadow-sm">
+              <span className="hidden sm:inline">Página </span>{page} / {totalPages || 1}
             </div>
             
             <Button
@@ -349,10 +349,10 @@ export default function RelatoriosPage() {
               size="sm"
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages || loading}
-              className="h-10 rounded-xl px-4 flex items-center gap-2 font-bold transition-all active:scale-95"
+              className="h-9 md:h-10 rounded-xl px-3 md:px-4 flex items-center gap-2 font-bold transition-all active:scale-95 text-xs"
             >
-              Próximo
-              <ChevronRight size={18} />
+              <span className="hidden sm:inline">Próximo</span>
+              <ChevronRight size={16} />
             </Button>
           </div>
         </div>
